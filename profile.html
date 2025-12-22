@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الملف الشخصي والبحث - المنصة التعليمية</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #6d28d9;
+            --primary-dark: #5b21b6;
+            --secondary: #10b981;
+            --accent: #8b5cf6;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #475569;
+            --border-light: #64748b;
+            --error: #ef4444;
+            --like-red: #ef4444;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            direction: rtl;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        
+        .app-header {
+            background-color: var(--surface);
+            color: var(--text);
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 20px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        
+        .back-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .app-header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .app-content {
+            padding: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .search-section {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .search-container {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 14px 52px 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            background: var(--surface-light);
+            font-family: inherit;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--surface);
+            box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.2);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 18px;
+        }
+        
+        .search-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 8px;
+        }
+        
+        .search-results {
+            display: none;
+            margin-bottom: 20px;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .results-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .results-count {
+            font-size: 14px;
+            color: var(--text-secondary);
+            background: var(--surface-light);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        
+        .results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 4px;
+        }
+        
+        .user-card {
+            background: var(--surface-light);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .user-card:hover {
+            background: var(--surface);
+            border-color: var(--border-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .user-card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin-left: 12px;
+            flex-shrink: 0;
+        }
+        
+        .user-info {
+            flex: 1;
+        }
+        
+        .user-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .user-email {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .like-btn-small {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 18px;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .like-btn-small:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--like-red);
+        }
+        
+        .like-btn-small.liked {
+            color: var(--like-red);
+        }
+        
+        .view-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .view-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .profile-card {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            color: white;
+            font-size: 40px;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(109, 40, 217, 0.3);
+        }
+        
+        .profile-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .profile-email {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        
+        .join-date {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+        
+        .like-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .like-btn {
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-size: 16px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 200px;
+        }
+        
+        .like-btn:hover:not(:disabled) {
+            background: var(--surface);
+            border-color: var(--border-light);
+            transform: translateY(-2px);
+        }
+        
+        .like-btn.liked {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--like-red);
+            color: var(--like-red);
+        }
+        
+        .like-btn.liked i {
+            color: var(--like-red);
+        }
+        
+        .like-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .like-count {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 8px;
+        }
+        
+        .likes-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        
+        .likes-info i {
+            color: var(--like-red);
+        }
+        
+        .tabs {
+            display: flex;
+            background: var(--surface-light);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .account-info {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            color: var(--primary);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .info-value {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: none;
+            border: 1px solid transparent;
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        
+        .alert-info {
+            background: rgba(109, 40, 217, 0.1);
+            color: var(--primary);
+            border-color: rgba(109, 40, 217, 0.3);
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0 8px;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+            border-top: 1px solid var(--border);
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background-color: rgba(30, 41, 59, 0.95);
+        }
+        
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-muted);
+            padding: 8px 0;
+            border-radius: 10px;
+            margin: 0 4px;
+            transition: all 0.3s;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+            background: rgba(109, 40, 217, 0.15);
+        }
+        
+        .nav-item:hover:not(.active) {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-icon {
+            font-size: 19px;
+            margin-bottom: 6px;
+        }
+        
+        .nav-label {
+            font-size: 8px;
+            font-weight: 500;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-icon {
+            font-size: 48px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+        
+        .action-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        
+        .action-item {
+            display: flex;
+            align-items: center;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .action-item:hover {
+            background: var(--surface);
+            border-color: var(--border-light);
+        }
+        
+        .action-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(109, 40, 217, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 12px;
+            color: var(--primary);
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .action-content {
+            flex: 1;
+        }
+        
+        .action-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .action-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .action-arrow {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <button class="back-btn" onclick="goBack()">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+            <h1 id="pageTitle">الملف الشخصي والبحث</h1>
+        </div>
+        <div id="headerActions"></div>
+    </header>
+    
+    <main class="app-content">
+        <div class="alert" id="alertMessage"></div>
+        
+        <div class="search-section">
+            <div class="search-container">
+                <input type="text" 
+                       class="search-input" 
+                       id="searchInput" 
+                       placeholder="ابحث عن مستخدمين بالاسم أو البريد الإلكتروني..."
+                       autocomplete="off">
+                <div class="search-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+            <div class="search-hint">
+                اكتب اسم المستخدم أو البريد الإلكتروني للبحث
+            </div>
+            
+            <!-- زر واحد فقط لعرض جميع المستخدمين -->
+            <div style="text-align: center; margin-top: 10px;">
+                <button id="showAllUsersBtn" style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; color: #10b981; padding: 8px 16px; border-radius: 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-users"></i> عرض جميع المستخدمين
+                </button>
+            </div>
+        </div>
+        
+        <div class="search-results" id="searchResults">
+            <div class="results-header">
+                <div class="results-title" id="resultsTitle">نتائج البحث</div>
+                <div class="results-count" id="resultsCount">0 نتيجة</div>
+            </div>
+            <div class="results-list" id="resultsList"></div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="profile">الملف الشخصي</div>
+            <div class="tab" data-tab="likes">الإعجابات</div>
+            <div class="tab" data-tab="stats">الإحصائيات</div>
+        </div>
+        
+        <div class="tab-content active" id="profileTab">
+            <div class="profile-card" id="profileCard">
+                <div class="profile-avatar" id="profileAvatar">
+                    <span id="avatarText">?</span>
+                </div>
+                
+                <div class="profile-name" id="profileName">جار التحميل...</div>
+                <div class="profile-email" id="profileEmail">...</div>
+                <div class="join-date" id="joinDate">...</div>
+                
+                <div class="like-section" id="likeSection" style="display: none;">
+                    <button class="like-btn" id="likeBtn">
+                        <i class="far fa-heart"></i>
+                        <span id="likeText">أعجبني</span>
+                    </button>
+                    <div class="like-count">
+                        <div class="likes-info">
+                            <i class="fas fa-heart"></i>
+                            <span id="likesCount">0</span>
+                            <span>إعجاب</span>
+                        </div>
+                    </div>
+                    
+                    <a href="#" class="view-btn" id="backToMyProfile" style="display: none; margin-top: 12px;">
+                        <i class="fas fa-arrow-right"></i> العودة لملفي الشخصي
+                    </a>
+                </div>
+            </div>
+            
+            <div class="account-info" id="accountInfoSection">
+                <div class="section-title">
+                    <i class="fas fa-user-circle"></i>
+                    <span>معلومات الحساب</span>
+                </div>
+                <div class="info-grid" id="accountInfo"></div>
+            </div>
+            
+            <div class="profile-actions" id="profileActions">
+                <div class="section-title">
+                    <i class="fas fa-cog"></i>
+                    <span>الإجراءات</span>
+                </div>
+                
+                <div class="action-list">
+                    <button class="action-item" id="editProfileBtn">
+                        <div class="action-icon">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div class="action-content">
+                            <div class="action-title">تغيير الاسم</div>
+                            <div class="action-desc">تعديل اسمك المعروض</div>
+                        </div>
+                        <div class="action-arrow">
+                            <i class="fas fa-arrow-left"></i>
+                        </div>
+                    </button>
+                    
+                    <a href="home.html" class="action-item">
+                        <div class="action-icon">
+                            <i class="fas fa-home"></i>
+                        </div>
+                        <div class="action-content">
+                            <div class="action-title">الصفحة الرئيسية</div>
+                            <div class="action-desc">الرجوع إلى الصفحة الرئيسية</div>
+                        </div>
+                        <div class="action-arrow">
+                            <i class="fas fa-arrow-left"></i>
+                        </div>
+                    </a>
+                    
+                    <button class="action-item" id="logoutBtn">
+                        <div class="action-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </div>
+                        <div class="action-content">
+                            <div class="action-title">تسجيل الخروج</div>
+                            <div class="action-desc">الخروج من حسابك الحالي</div>
+                        </div>
+                        <div class="action-arrow">
+                            <i class="fas fa-arrow-left"></i>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="likesTab">
+            <div class="profile-card">
+                <div class="section-title">
+                    <i class="fas fa-heart"></i>
+                    <span>إدارة الإعجابات</span>
+                </div>
+                
+                <div class="account-info" style="margin-bottom: 16px;">
+                    <div class="section-title">
+                        <i class="fas fa-heart-circle-check"></i>
+                        <span>المعجبين بي</span>
+                        <span class="results-count" id="myLikersCount">0</span>
+                    </div>
+                    <div class="results-list" id="myLikersList" style="max-height: 300px;"></div>
+                </div>
+                
+                <div class="account-info">
+                    <div class="section-title">
+                        <i class="fas fa-heart-circle-plus"></i>
+                        <span>أعجبت بهم</span>
+                        <span class="results-count" id="myLikesCount">0</span>
+                    </div>
+                    <div class="results-list" id="myLikesList" style="max-height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="statsTab">
+            <div class="profile-card">
+                <div class="section-title">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>إحصائيات الإعجابات</span>
+                </div>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">إجمالي الإعجابات المستلمة</span>
+                        <span class="info-value" id="totalLikesReceived">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">إجمالي الإعجابات المقدمة</span>
+                        <span class="info-value" id="totalLikesGiven">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">رتبتك في المنصة</span>
+                        <span class="info-value" id="likesRank">جديد</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <div class="nav-icon">
+                <i class="fas fa-home"></i>
+            </div>
+            <div class="nav-label">الرئيسية</div>
+        </a>
+        
+        <a href="home.html" class="nav-item">
+            <div class="nav-icon">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <div class="nav-label">الفيديوهات</div>
+        </a>
+        
+        <a href="quiz.html" class="nav-item">
+            <div class="nav-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="nav-label">الاختبارات</div>
+        </a>
+        
+        <a href="profile.html" class="nav-item active">
+            <div class="nav-icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="nav-label">البحث والملف</div>
+        </a>
+    </nav>
+
+    <script>
+        const SUPABASE_URL = 'https://ikpijsdqmavklpgunumm.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlrcGlqc2RxbWF2a2xwZ3VudW1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzNzUzODgsImV4cCI6MjA3MDk1MTM4OH0.uC6t3PgZYOMQuWxFQrFy9aXIR4um0X1Lsf8SkplhZlc';
+        
+        let supabaseClient = null;
+        let currentUser = null;
+        let userProfile = null;
+        let viewedUserProfile = null;
+        let isViewingOtherProfile = false;
+        let searchTimeout = null;
+        
+        async function initSupabase() {
+            try {
+                console.log('🔧 بدء تهيئة Supabase...');
+                
+                if (!window.supabase) {
+                    throw new Error('مكتبة Supabase غير محملة');
+                }
+                
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('✅ تم الاتصال بـ Supabase');
+                
+                const isAuthenticated = await checkAuthState();
+                if (!isAuthenticated) {
+                    window.location.href = 'home.html';
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('❌ خطأ في الاتصال:', error);
+                showAlert('خطأ في الاتصال بالخادم', 'error');
+                return false;
+            }
+        }
+        
+        async function checkAuthState() {
+            try {
+                console.log('🔍 التحقق من حالة المصادقة...');
+                const { data, error } = await supabaseClient.auth.getSession();
+                
+                if (error || !data.session) {
+                    console.error('❌ المستخدم غير مسجل دخول:', error);
+                    window.location.href = 'home.html';
+                    return false;
+                }
+                
+                currentUser = data.session.user;
+                console.log('👤 المستخدم الحالي:', currentUser.email);
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const userId = urlParams.get('user_id');
+                
+                if (userId && userId !== currentUser.id) {
+                    console.log('👁️ مشاهدة ملف مستخدم آخر:', userId);
+                    isViewingOtherProfile = true;
+                    await loadOtherUserProfile(userId);
+                } else {
+                    console.log('👤 عرض الملف الشخصي الخاص');
+                    await loadUserProfile();
+                    await loadLikesData();
+                    await loadMyLikesData();
+                }
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ خطأ في التحقق من المصادقة:', error);
+                window.location.href = 'home.html';
+                return false;
+            }
+        }
+        
+        async function loadUserProfile() {
+            try {
+                console.log('📥 جلب بيانات الملف الشخصي...');
+                
+                const { data: profile, error } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .single();
+                
+                if (error) {
+                    console.error('❌ خطأ في جلب الملف الشخصي:', error);
+                    
+                    if (error.code === 'PGRST116') {
+                        console.log('➕ إنشاء ملف شخصي جديد للمستخدم...');
+                        await createOrUpdateUserProfile();
+                        await loadUserProfile();
+                        return;
+                    }
+                    
+                    showAlert('حدث خطأ في تحميل بيانات الملف الشخصي', 'error');
+                    return;
+                }
+                
+                userProfile = profile;
+                console.log('✅ تم تحميل الملف الشخصي:', profile.name);
+                
+                updateProfileUI();
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحميل الملف الشخصي:', error);
+                showAlert('حدث خطأ في تحميل بيانات الملف الشخصي', 'error');
+            }
+        }
+        
+        async function createOrUpdateUserProfile() {
+            try {
+                const { data: userData } = await supabaseClient.auth.getUser();
+                
+                if (!userData.user) {
+                    throw new Error('لم يتم العثور على بيانات المستخدم');
+                }
+                
+                const userName = userData.user.user_metadata?.name || 
+                               userData.user.email.split('@')[0] || 
+                               'مستخدم';
+                
+                const { error } = await supabaseClient
+                    .from('users')
+                    .upsert({
+                        id: userData.user.id,
+                        email: userData.user.email,
+                        name: userName,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'id'
+                    });
+                
+                if (error) {
+                    console.error('❌ خطأ في إنشاء الملف الشخصي:', error);
+                    throw error;
+                }
+                
+                console.log('✅ تم إنشاء الملف الشخصي بنجاح');
+                
+            } catch (error) {
+                console.error('❌ خطأ في إنشاء ملف المستخدم:', error);
+                throw error;
+            }
+        }
+        
+        async function loadOtherUserProfile(userId) {
+            try {
+                console.log('📥 جلب ملف المستخدم الآخر:', userId);
+                
+                const { data: profile, error } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+                
+                if (error) {
+                    console.error('❌ خطأ في جلب الملف الشخصي للمستخدم الآخر:', error);
+                    showAlert('الملف الشخصي غير موجود', 'error');
+                    setTimeout(() => {
+                        window.location.href = 'profile.html';
+                    }, 2000);
+                    return;
+                }
+                
+                viewedUserProfile = profile;
+                console.log('✅ تم تحميل ملف المستخدم الآخر:', profile.name);
+                
+                updateOtherProfileUI();
+                await loadOtherUserLikes(userId);
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحميل ملف المستخدم الآخر:', error);
+                showAlert('حدث خطأ في تحميل الملف الشخصي', 'error');
+            }
+        }
+        
+        // === عرض جميع المستخدمين ===
+        // === عرض جميع المستخدمين ===
+// === عرض جميع المستخدمين - النسخة المحسنة ===
+async function showAllUsers() {
+    try {
+        console.log('👥 بدء جلب جميع المستخدمين...');
+        console.log('🔍 حالة المتغيرات:', {
+            currentUser: currentUser ? currentUser.email : 'غير معرف',
+            supabaseClient: supabaseClient ? '✅ معرف' : '❌ غير معرف'
+        });
+        
+        // 1. التحقق من أن المستخدم مسجل دخول
+        if (!currentUser || !supabaseClient) {
+            console.error('❌ خطأ: يجب تسجيل الدخول أولاً أو إعادة تحميل الصفحة');
+            showAlert('يجب تسجيل الدخول أولاً. جاري إعادة التحميل...', 'error');
+            
+            // محاولة إعادة تحميل بيانات المصادقة
+            await checkAuthState();
+            
+            if (!currentUser) {
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 2000);
+                return;
+            }
+        }
+        
+        // 2. جلب جميع المستخدمين
+        console.log('📥 جلب بيانات المستخدمين من قاعدة البيانات...');
+        
+        const { data: users, error } = await supabaseClient
+            .from('users')
+            .select('id, name, email, created_at')
+            .order('created_at', { ascending: false });
+        
+        if (error) {
+            console.error('❌ خطأ في جلب المستخدمين:', error);
+            showAlert(`خطأ في قاعدة البيانات: ${error.message}`, 'error');
+            return;
+        }
+        
+        console.log('✅ تم جلب المستخدمين:', users);
+        console.log(`📊 عدد المستخدمين: ${users.length}`);
+        
+        // 3. عرض النتائج
+        const resultsList = document.getElementById('resultsList');
+        const resultsCount = document.getElementById('resultsCount');
+        const resultsTitle = document.getElementById('resultsTitle');
+        const searchResults = document.getElementById('searchResults');
+        
+        if (!resultsList || !resultsCount || !resultsTitle || !searchResults) {
+            console.error('❌ عناصر HTML مفقودة');
+            return;
+        }
+        
+        // حساب عدد المستخدمين الآخرين
+        let otherUsersCount = 0;
+        
+        if (!users || users.length === 0) {
+            resultsList.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    <i class="fas fa-users fa-3x" style="margin-bottom: 10px;"></i>
+                    <p>لا يوجد مستخدمون في المنصة</p>
+                    <p style="font-size: 12px; margin-top: 8px;">
+                        سجّل مستخدمين جدد من الصفحة الرئيسية
+                    </p>
+                </div>
+            `;
+        } else {
+            let resultsHTML = '';
+            
+            users.forEach(user => {
+                if (!user || !user.id) return;
+                
+                const isCurrentUser = user.id === currentUser.id;
+                if (!isCurrentUser) otherUsersCount++;
+                
+                const userName = user.name || 'مستخدم';
+                const userEmail = user.email || 'غير محدد';
+                const firstLetter = userName.charAt(0).toUpperCase();
+                const joinDate = user.created_at ? formatDate(user.created_at) : '';
+                
+                resultsHTML += `
+                    <div class="user-card" data-user-id="${user.id}" 
+                         style="${isCurrentUser ? 'opacity: 0.7; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.3);' : ''}">
+                        <div class="user-card-header">
+                            <div class="user-avatar" 
+                                 style="${isCurrentUser ? 'background: linear-gradient(135deg, #10b981, #059669);' : ''}">
+                                ${firstLetter}
+                            </div>
+                            <div class="user-info">
+                                <div class="user-name">
+                                    ${userName}
+                                    ${isCurrentUser ? 
+                                        '<span style="color: #10b981; font-size: 11px; margin-right: 5px;">(أنت)</span>' : 
+                                        ''}
+                                </div>
+                                <div class="user-email">${userEmail}</div>
+                            </div>
+                            ${!isCurrentUser ? `
+                                <div class="user-actions">
+                                    <button class="view-btn view-profile-btn" data-user-id="${user.id}">
+                                        عرض الملف
+                                    </button>
+                                </div>
+                            ` : `
+                                <div class="user-actions">
+                                    <span style="color: var(--text-muted); font-size: 12px;">
+                                        <i class="fas fa-user-check"></i> أنت
+                                    </span>
+                                </div>
+                            `}
+                        </div>
+                        ${joinDate ? `
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+                                عضو منذ ${joinDate}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            resultsList.innerHTML = resultsHTML;
+        }
+        
+        // تحديث العناوين
+        const totalUsers = users ? users.length : 0;
+        resultsCount.textContent = `${totalUsers} مستخدم`;
+        resultsTitle.textContent = `جميع المستخدمين (${otherUsersCount} مستخدم آخر)`;
+        searchResults.style.display = 'block';
+        
+        // إضافة event listeners للأزرار الجديدة
+        setTimeout(() => {
+            document.querySelectorAll('.view-profile-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const userId = this.dataset.userId;
+                    if (userId) {
+                        viewUserProfile(userId);
+                    }
+                });
+            });
+        }, 100);
+        
+        // إظهار رسالة النجاح
+        if (totalUsers > 0) {
+            showAlert(`تم عرض ${totalUsers} مستخدم (${otherUsersCount} مستخدم آخر بخلافك)`, 'info');
+        }
+        
+        console.log(`🎉 تم عرض ${totalUsers} مستخدم (${otherUsersCount} مستخدم آخر)`);
+        
+    } catch (error) {
+        console.error('❌ خطأ غير متوقع في showAllUsers:', error);
+        showAlert(`حدث خطأ غير متوقع: ${error.message}`, 'error');
+    }
+}
+        async function searchUsers(query) {
+            try {
+                console.log('🔍 بدء البحث عن:', query);
+                
+                if (!query || query.trim().length < 1) {
+                    document.getElementById('searchResults').style.display = 'none';
+                    return;
+                }
+                
+                const resultsList = document.getElementById('resultsList');
+                resultsList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        <div class="loading" style="margin: 0 auto 10px;"></div>
+                        <p>جاري البحث...</p>
+                    </div>
+                `;
+                
+                document.getElementById('searchResults').style.display = 'block';
+                
+                const searchTerm = `%${query}%`;
+                console.log('🔍 مصطلح البحث:', searchTerm);
+                
+                const { data: users, error } = await supabaseClient
+                    .from('users')
+                    .select('id, name, email, created_at')
+                    .or(`name.ilike.${searchTerm},email.ilike.${searchTerm}`)
+                    .neq('id', currentUser.id)
+                    .limit(20);
+                
+                console.log('📊 نتائج البحث الخام:', users);
+                console.log('❌ خطأ البحث:', error);
+                
+                if (error) {
+                    console.error('❌ خطأ في البحث:', error);
+                    showAlert('حدث خطأ أثناء البحث', 'error');
+                    return;
+                }
+                
+                const resultsCount = users ? users.length : 0;
+                document.getElementById('resultsCount').textContent = `${resultsCount} نتيجة`;
+                console.log('✅ عدد النتائج:', resultsCount);
+                
+                await displaySearchResults(users || []);
+                
+            } catch (error) {
+                console.error('❌ خطأ في البحث:', error);
+                showAlert('حدث خطأ أثناء البحث', 'error');
+            }
+        }
+        
+        async function displaySearchResults(users) {
+            const resultsList = document.getElementById('resultsList');
+            const searchInput = document.getElementById('searchInput').value;
+            
+            console.log('📋 عرض نتائج البحث:', users);
+            
+            if (!users || users.length === 0) {
+                resultsList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        <i class="fas fa-search fa-3x" style="margin-bottom: 10px;"></i>
+                        <p>لا توجد نتائج تطابق "${searchInput}"</p>
+                        <p style="font-size: 12px; margin-top: 8px;">
+                            جرب البحث بأسماء مختلفة أو اضغط على "عرض جميع المستخدمين"
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let resultsHTML = '';
+            
+            for (const user of users) {
+                const { data: likeData } = await supabaseClient
+                    .from('profile_likes')
+                    .select('id')
+                    .eq('liker_id', currentUser.id)
+                    .eq('liked_user_id', user.id)
+                    .single();
+                
+                const isLiked = !!likeData;
+                
+                const { count: likesCount } = await supabaseClient
+                    .from('profile_likes')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('liked_user_id', user.id);
+                
+                resultsHTML += `
+                    <div class="user-card" data-user-id="${user.id}">
+                        <div class="user-card-header">
+                            <div class="user-avatar">
+                                ${(user.name || 'م').charAt(0).toUpperCase()}
+                            </div>
+                            <div class="user-info">
+                                <div class="user-name">${user.name || 'مستخدم'}</div>
+                                <div class="user-email">${user.email || 'غير محدد'}</div>
+                            </div>
+                            <div class="user-actions">
+                                <button class="like-btn-small ${isLiked ? 'liked' : ''}" 
+                                        data-user-id="${user.id}"
+                                        title="${isLiked ? 'إزالة الإعجاب' : 'إعجاب'}">
+                                    <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
+                                </button>
+                                <button class="view-btn view-profile-btn" data-user-id="${user.id}">
+                                    عرض الملف
+                                </button>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12px;">
+                            <span style="color: var(--text-muted);">
+                                <i class="fas fa-heart" style="color: var(--like-red); margin-left: 4px;"></i>
+                                ${likesCount || 0} إعجاب
+                            </span>
+                            <span style="color: var(--text-muted);">
+                                عضو منذ ${formatDate(user.created_at)}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            resultsList.innerHTML = resultsHTML;
+        }
+        
+        async function loadLikesData() {
+            try {
+                const { count: likesReceived } = await supabaseClient
+                    .from('profile_likes')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('liked_user_id', currentUser.id);
+                
+                const { count: likesGiven } = await supabaseClient
+                    .from('profile_likes')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('liker_id', currentUser.id);
+                
+                updateLikesStats(likesReceived || 0, likesGiven || 0);
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحميل بيانات الإعجابات:', error);
+            }
+        }
+        
+        async function loadOtherUserLikes(userId) {
+            try {
+                const { count: likesReceived } = await supabaseClient
+                    .from('profile_likes')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('liked_user_id', userId);
+                
+                const { data: currentUserLike } = await supabaseClient
+                    .from('profile_likes')
+                    .select('id')
+                    .eq('liker_id', currentUser.id)
+                    .eq('liked_user_id', userId)
+                    .single();
+                
+                updateOtherUserLikesUI(likesReceived || 0, currentUserLike);
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحميل بيانات الإعجابات للمستخدم الآخر:', error);
+            }
+        }
+        
+        async function loadMyLikesData() {
+            try {
+                const { data: likesData } = await supabaseClient
+                    .from('profile_likes')
+                    .select('liker_id, created_at')
+                    .eq('liked_user_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+                
+                const likerIds = likesData ? likesData.map(like => like.liker_id) : [];
+                const likers = [];
+                
+                if (likerIds.length > 0) {
+                    const { data: usersData } = await supabaseClient
+                        .from('users')
+                        .select('id, name, email')
+                        .in('id', likerIds);
+                    
+                    if (usersData) {
+                        likesData.forEach(like => {
+                            const user = usersData.find(u => u.id === like.liker_id);
+                            if (user) {
+                                likers.push({
+                                    ...user,
+                                    liked_at: like.created_at
+                                });
+                            }
+                        });
+                    }
+                }
+                
+                const { data: myLikesData } = await supabaseClient
+                    .from('profile_likes')
+                    .select('liked_user_id, created_at')
+                    .eq('liker_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+                
+                const likedUserIds = myLikesData ? myLikesData.map(like => like.liked_user_id) : [];
+                const likedUsers = [];
+                
+                if (likedUserIds.length > 0) {
+                    const { data: usersData } = await supabaseClient
+                        .from('users')
+                        .select('id, name, email')
+                        .in('id', likedUserIds);
+                    
+                    if (usersData) {
+                        myLikesData.forEach(like => {
+                            const user = usersData.find(u => u.id === like.liked_user_id);
+                            if (user) {
+                                likedUsers.push({
+                                    ...user,
+                                    liked_at: like.created_at
+                                });
+                            }
+                        });
+                    }
+                }
+                
+                updateMyLikesUI(likers, likedUsers);
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحميل بيانات إعجاباتي:', error);
+            }
+        }
+        
+        function updateProfileUI() {
+            if (!userProfile) return;
+            
+            document.getElementById('pageTitle').textContent = 'الملف الشخصي والبحث';
+            document.getElementById('profileName').textContent = userProfile.name || 'مستخدم';
+            document.getElementById('profileEmail').textContent = userProfile.email || 'غير محدد';
+            
+            const avatarText = document.getElementById('avatarText');
+            avatarText.textContent = (userProfile.name || 'م').charAt(0).toUpperCase();
+            
+            if (userProfile.created_at) {
+                const joinDate = new Date(userProfile.created_at);
+                const formattedDate = joinDate.toLocaleDateString('ar-SA', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                document.getElementById('joinDate').textContent = `عضو منذ ${formattedDate}`;
+            }
+            
+            updateAccountInfo();
+            document.getElementById('likeSection').style.display = 'none';
+            document.getElementById('profileActions').style.display = 'block';
+            document.getElementById('accountInfoSection').style.display = 'block';
+        }
+        
+        function updateOtherProfileUI() {
+            if (!viewedUserProfile) return;
+            
+            document.getElementById('pageTitle').textContent = `ملف ${viewedUserProfile.name || 'مستخدم'}`;
+            
+            document.getElementById('headerActions').innerHTML = `
+                <button class="view-btn" onclick="goBackToSearch()" style="font-size: 12px; padding: 6px 12px;">
+                    <i class="fas fa-search"></i> العودة للبحث
+                </button>
+            `;
+            
+            document.getElementById('profileName').textContent = viewedUserProfile.name || 'مستخدم';
+            document.getElementById('profileEmail').textContent = viewedUserProfile.email || 'غير محدد';
+            
+            const avatarText = document.getElementById('avatarText');
+            avatarText.textContent = (viewedUserProfile.name || 'م').charAt(0).toUpperCase();
+            
+            if (viewedUserProfile.created_at) {
+                const joinDate = new Date(viewedUserProfile.created_at);
+                const formattedDate = joinDate.toLocaleDateString('ar-SA', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                document.getElementById('joinDate').textContent = `عضو منذ ${formattedDate}`;
+            }
+            
+            document.getElementById('accountInfoSection').style.display = 'none';
+            document.getElementById('profileActions').style.display = 'none';
+            
+            const likeSection = document.getElementById('likeSection');
+            likeSection.style.display = 'block';
+            document.getElementById('backToMyProfile').style.display = 'inline-block';
+        }
+        
+        function updateLikesStats(likesReceived, likesGiven) {
+            document.getElementById('totalLikesReceived').textContent = likesReceived;
+            document.getElementById('totalLikesGiven').textContent = likesGiven;
+            
+            const rank = calculateRank(likesReceived);
+            document.getElementById('likesRank').textContent = rank;
+        }
+        
+        function updateOtherUserLikesUI(likesReceived, currentUserLike) {
+            document.getElementById('likesCount').textContent = likesReceived;
+            
+            const likeBtn = document.getElementById('likeBtn');
+            
+            if (currentUserLike) {
+                likeBtn.classList.add('liked');
+                likeBtn.innerHTML = '<i class="fas fa-heart"></i> <span>تم الإعجاب</span>';
+            } else {
+                likeBtn.classList.remove('liked');
+                likeBtn.innerHTML = '<i class="far fa-heart"></i> <span>أعجبني</span>';
+            }
+            
+            likeBtn.disabled = false;
+        }
+        
+        function updateMyLikesUI(likers, likedUsers) {
+            document.getElementById('myLikersCount').textContent = likers.length;
+            document.getElementById('myLikesCount').textContent = likedUsers.length;
+            
+            const myLikersList = document.getElementById('myLikersList');
+            if (likers.length === 0) {
+                myLikersList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        <i class="fas fa-user-friends fa-3x" style="margin-bottom: 10px;"></i>
+                        <p>لا يوجد معجبين بك بعد</p>
+                    </div>
+                `;
+            } else {
+                let likersHTML = '';
+                likers.forEach(user => {
+                    likersHTML += `
+                        <div class="user-card" data-user-id="${user.id}">
+                            <div class="user-card-header">
+                                <div class="user-avatar">
+                                    ${(user.name || 'م').charAt(0).toUpperCase()}
+                                </div>
+                                <div class="user-info">
+                                    <div class="user-name">${user.name || 'مستخدم'}</div>
+                                    <div class="user-email">${user.email || 'غير محدد'}</div>
+                                </div>
+                                <div class="user-actions">
+                                    <button class="view-btn view-profile-btn" data-user-id="${user.id}">
+                                        عرض الملف
+                                    </button>
+                                </div>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+                                أعجب بك منذ ${formatTimeAgo(new Date(user.liked_at))}
+                            </div>
+                        </div>
+                    `;
+                });
+                myLikersList.innerHTML = likersHTML;
+            }
+            
+            const myLikesList = document.getElementById('myLikesList');
+            if (likedUsers.length === 0) {
+                myLikesList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        <i class="fas fa-heart fa-3x" style="margin-bottom: 10px;"></i>
+                        <p>لم تعجب بأي مستخدم بعد</p>
+                    </div>
+                `;
+            } else {
+                let likesHTML = '';
+                likedUsers.forEach(user => {
+                    likesHTML += `
+                        <div class="user-card" data-user-id="${user.id}">
+                            <div class="user-card-header">
+                                <div class="user-avatar">
+                                    ${(user.name || 'م').charAt(0).toUpperCase()}
+                                </div>
+                                <div class="user-info">
+                                    <div class="user-name">${user.name || 'مستخدم'}</div>
+                                    <div class="user-email">${user.email || 'غير محدد'}</div>
+                                </div>
+                                <div class="user-actions">
+                                    <button class="like-btn-small liked" 
+                                            data-user-id="${user.id}"
+                                            title="إزالة الإعجاب">
+                                        <i class="fas fa-heart"></i>
+                                    </button>
+                                    <button class="view-btn view-profile-btn" data-user-id="${user.id}">
+                                        عرض الملف
+                                    </button>
+                                </div>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+                                أعجبت به منذ ${formatTimeAgo(new Date(user.liked_at))}
+                            </div>
+                        </div>
+                    `;
+                });
+                myLikesList.innerHTML = likesHTML;
+            }
+        }
+        
+        function calculateRank(likesCount) {
+            if (likesCount >= 100) return 'نجم ⭐⭐⭐';
+            if (likesCount >= 50) return 'مشهور ⭐⭐';
+            if (likesCount >= 20) return 'نشط ⭐';
+            if (likesCount >= 10) return 'متميز';
+            if (likesCount >= 5) return 'متابع';
+            return 'جديد';
+        }
+        
+        async function toggleLike(userId) {
+            try {
+                console.log('💖 تبديل الإعجاب للمستخدم:', userId);
+                
+                if (!userId) {
+                    showAlert('حدث خطأ', 'error');
+                    return;
+                }
+                
+                const { data: existingLike } = await supabaseClient
+                    .from('profile_likes')
+                    .select('id')
+                    .eq('liker_id', currentUser.id)
+                    .eq('liked_user_id', userId)
+                    .single();
+                
+                if (existingLike) {
+                    await supabaseClient
+                        .from('profile_likes')
+                        .delete()
+                        .eq('id', existingLike.id);
+                    
+                    console.log('✅ تم إزالة الإعجاب');
+                    showAlert('تم إزالة الإعجاب', 'info');
+                    
+                    if (isViewingOtherProfile && viewedUserProfile && viewedUserProfile.id === userId) {
+                        await loadOtherUserLikes(userId);
+                    }
+                    
+                    await loadLikesData();
+                    await loadMyLikesData();
+                    
+                } else {
+                    await supabaseClient
+                        .from('profile_likes')
+                        .insert({
+                            liker_id: currentUser.id,
+                            liked_user_id: userId,
+                            created_at: new Date().toISOString()
+                        });
+                    
+                    console.log('✅ تم الإعجاب بنجاح');
+                    showAlert('تم الإعجاب بالملف الشخصي!', 'success');
+                    
+                    if (isViewingOtherProfile && viewedUserProfile && viewedUserProfile.id === userId) {
+                        await loadOtherUserLikes(userId);
+                    }
+                    
+                    await loadLikesData();
+                    await loadMyLikesData();
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في تبديل الإعجاب:', error);
+                showAlert('حدث خطأ في تحديث الإعجاب', 'error');
+            }
+        }
+        
+        function viewUserProfile(userId) {
+            console.log('👁️ عرض ملف المستخدم:', userId);
+            
+            const newUrl = `${window.location.pathname}?user_id=${userId}`;
+            window.history.pushState({}, '', newUrl);
+            
+            isViewingOtherProfile = true;
+            loadOtherUserProfile(userId);
+            
+            document.getElementById('searchResults').style.display = 'none';
+            document.getElementById('searchInput').value = '';
+            
+            switchTab('profile');
+        }
+        
+        function updateAccountInfo() {
+            const accountInfo = document.getElementById('accountInfo');
+            
+            if (!userProfile) {
+                accountInfo.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-user-slash"></i>
+                        </div>
+                        <p>لا توجد معلومات متاحة</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let infoHTML = '';
+            
+            infoHTML += `
+                <div class="info-item">
+                    <span class="info-label">رقم العضو</span>
+                    <span class="info-value" style="color: var(--text-secondary); font-family: monospace; font-size: 12px;">${currentUser.id.substring(0, 8)}...</span>
+                </div>
+            `;
+            
+            infoHTML += `
+                <div class="info-item">
+                    <span class="info-label">البريد الإلكتروني</span>
+                    <span class="info-value">${userProfile.email || 'غير محدد'}</span>
+                </div>
+            `;
+            
+            infoHTML += `
+                <div class="info-item">
+                    <span class="info-label">حالة الحساب</span>
+                    <span class="info-value" style="color: #10b981;">
+                        <i class="fas fa-check-circle"></i> نشط
+                    </span>
+                </div>
+            `;
+            
+            if (userProfile.updated_at) {
+                const updatedDate = new Date(userProfile.updated_at);
+                const formattedDate = updatedDate.toLocaleDateString('ar-SA', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+                infoHTML += `
+                    <div class="info-item">
+                        <span class="info-label">آخر تحديث</span>
+                        <span class="info-value">${formattedDate}</span>
+                    </div>
+                `;
+            }
+            
+            accountInfo.innerHTML = infoHTML;
+        }
+        
+        async function logout() {
+            try {
+                if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+                    const { error } = await supabaseClient.auth.signOut();
+                    
+                    if (error) {
+                        console.error('❌ خطأ في تسجيل الخروج:', error);
+                        showAlert('حدث خطأ أثناء تسجيل الخروج', 'error');
+                        return false;
+                    }
+                    
+                    window.location.href = 'home.html';
+                    return true;
+                }
+            } catch (error) {
+                console.error('❌ خطأ في تسجيل الخروج:', error);
+                showAlert('حدث خطأ أثناء تسجيل الخروج', 'error');
+                return false;
+            }
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+            
+            if (tabName === 'likes' && !isViewingOtherProfile) {
+                loadMyLikesData();
+            }
+        }
+        
+        function goBackToSearch() {
+            window.history.pushState({}, '', window.location.pathname);
+            
+            isViewingOtherProfile = false;
+            viewedUserProfile = null;
+            loadUserProfile();
+            loadLikesData();
+            
+            document.getElementById('pageTitle').textContent = 'الملف الشخصي والبحث';
+            document.getElementById('headerActions').innerHTML = '';
+            
+            switchTab('profile');
+        }
+        
+        function showAlert(message, type = 'success') {
+            const alertEl = document.getElementById('alertMessage');
+            alertEl.textContent = message;
+            alertEl.className = `alert alert-${type}`;
+            alertEl.style.display = 'block';
+            
+            setTimeout(() => {
+                alertEl.style.display = 'none';
+            }, 3000);
+        }
+        
+        function goBack() {
+            if (isViewingOtherProfile) {
+                goBackToSearch();
+            } else {
+                window.history.back();
+            }
+        }
+        
+        function formatTimeAgo(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return 'الآن';
+            if (diffMins < 60) return `${diffMins} دقيقة`;
+            if (diffHours < 24) return `${diffHours} ساعة`;
+            if (diffDays < 7) return `${diffDays} يوم`;
+            return date.toLocaleDateString('ar-SA');
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ar-SA', { month: 'short', year: 'numeric' });
+        }
+        
+        document.getElementById('likeBtn')?.addEventListener('click', async () => {
+            if (isViewingOtherProfile && viewedUserProfile) {
+                await toggleLike(viewedUserProfile.id);
+            }
+        });
+        
+        document.getElementById('backToMyProfile')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            goBackToSearch();
+        });
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 بدء تحميل الصفحة...');
+            
+            await initSupabase();
+            
+            const searchInput = document.getElementById('searchInput');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const editProfileBtn = document.getElementById('editProfileBtn');
+            const showAllUsersBtn = document.getElementById('showAllUsersBtn');
+            
+            // زر عرض جميع المستخدمين
+            if (showAllUsersBtn) {
+                showAllUsersBtn.addEventListener('click', showAllUsers);
+            }
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    const query = this.value.trim();
+                    
+                    console.log('⌨️ كتابة في البحث:', query);
+                    
+                    if (query.length >= 1) {
+                        searchTimeout = setTimeout(() => {
+                            searchUsers(query);
+                        }, 300);
+                    } else {
+                        document.getElementById('searchResults').style.display = 'none';
+                    }
+                });
+                
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        const query = this.value.trim();
+                        console.log('↵ بحث بالإنتر:', query);
+                        if (query.length >= 1) {
+                            searchUsers(query);
+                        }
+                    }
+                });
+            }
+            
+            document.addEventListener('click', async (e) => {
+                if (e.target.closest('.like-btn-small')) {
+                    const button = e.target.closest('.like-btn-small');
+                    const userId = button.dataset.userId;
+                    if (userId) {
+                        await toggleLike(userId);
+                    }
+                }
+                
+                if (e.target.closest('.view-profile-btn')) {
+                    const button = e.target.closest('.view-profile-btn');
+                    const userId = button.dataset.userId;
+                    if (userId) {
+                        viewUserProfile(userId);
+                    }
+                }
+                
+                if (e.target.closest('.user-card')) {
+                    const card = e.target.closest('.user-card');
+                    const userId = card.dataset.userId;
+                    if (userId && !e.target.closest('.user-actions')) {
+                        viewUserProfile(userId);
+                    }
+                }
+            });
+            
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    console.log('📌 تبديل التبويب:', tabName);
+                    switchTab(tabName);
+                });
+            });
+            
+            if (editProfileBtn) {
+                editProfileBtn.addEventListener('click', () => {
+                    showAlert('ميزة تعديل الاسم قيد التطوير', 'info');
+                });
+            }
+            
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    await logout();
+                });
+            }
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                if (item.href.includes('profile.html')) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+            
+            console.log('✅ صفحة الملف الشخصي مع البحث جاهزة');
+        });
+    </script>
+</body>
+</html>

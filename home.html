@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الفيديوهات التعليمية</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        /* متغيرات الألوان */
+        :root {
+            --primary: #6d28d9;
+            --primary-dark: #5b21b6;
+            --secondary: #10b981;
+            --accent: #8b5cf6;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #475569;
+            --border-light: #64748b;
+            --error: #ef4444;
+            --error-bg: #7f1d1d;
+            --success: #10b981;
+            --success-bg: #064e3b;
+            --warning: #f59e0b;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --shadow-light: rgba(0, 0, 0, 0.2);
+        }
+        
+        /* أساسيات */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--background); 
+            color: var(--text); 
+            direction: rtl;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        
+        /* الهيدر */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 3px 10px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+        }
+        .header h1 {
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header button {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: 0.3s;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .header button:hover {
+            background: rgba(255,255,255,0.25);
+        }
+        
+        /* البحث */
+        .search-box {
+            padding: 18px 20px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+        .search-input {
+            width: 100%;
+            padding: 14px 20px;
+            border: 2px solid var(--border);
+            border-radius: 30px;
+            font-size: 16px;
+            transition: 0.3s;
+            background: var(--surface-light);
+            color: var(--text);
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.2);
+        }
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        /* تصفية الأساتذة */
+        .professor-filter {
+            padding: 15px 20px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+        .filter-title {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chips {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        .chip {
+            padding: 10px 18px;
+            background: var(--surface-light);
+            border: none;
+            border-radius: 25px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: 0.3s;
+            border: 2px solid transparent;
+        }
+        .chip:hover {
+            background: var(--surface);
+            color: var(--text);
+        }
+        .chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        /* قائمة الفيديوهات */
+        .video-list {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        @media (max-width: 650px) {
+            .video-list {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* بطاقة الفيديو */
+        .video-card {
+            background: var(--surface);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px var(--shadow);
+            transition: 0.3s;
+            cursor: pointer;
+            border: 1px solid var(--border);
+        }
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px var(--shadow);
+            border-color: var(--border-light);
+        }
+        .video-thumb {
+            width: 100%;
+            height: 190px;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+        .video-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: 0.5s;
+        }
+        .video-card:hover .video-thumb img {
+            transform: scale(1.05);
+        }
+        .play-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.9);
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 22px;
+            opacity: 0;
+            transition: 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .video-card:hover .play-btn {
+            opacity: 1;
+        }
+        .video-info {
+            padding: 18px;
+        }
+        .video-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        .video-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .video-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        .professor {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .prof-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(109, 40, 217, 0.3);
+        }
+        .prof-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+        }
+        .views {
+            font-size: 13px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* حالة التحميل */
+        .loading {
+            padding: 60px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* حالة الخطأ */
+        .error-box {
+            padding: 60px 20px;
+            text-align: center;
+            color: var(--error);
+        }
+        .error-box h3 {
+            margin-bottom: 10px;
+            color: var(--error);
+        }
+        .retry-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+        .retry-btn:hover {
+            background: var(--primary-dark);
+        }
+        
+        /* نافذة الفيديو */
+        .video-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            width: 90%;
+            max-width: 850px;
+            background: #111;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .modal-header {
+            padding: 18px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+        .modal-title {
+            color: var(--text);
+            font-size: 18px;
+            font-weight: 500;
+        }
+        .close-btn {
+            background: var(--surface-light);
+            color: var(--text);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+        .close-btn:hover {
+            background: var(--surface);
+        }
+        .player-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 */
+        }
+        .player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        /* حالة فارغة */
+        .empty {
+            padding: 60px 20px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+        .empty-icon {
+            font-size: 60px;
+            color: var(--border);
+            margin-bottom: 15px;
+        }
+        .empty h3 {
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+        }
+        
+        /* التنقل السفلي */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0 8px;
+            box-shadow: 0 -4px 20px var(--shadow);
+            border-top: 1px solid var(--border);
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background-color: rgba(30, 41, 59, 0.95);
+        }
+        
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-muted);
+            padding: 8px 0;
+            border-radius: 10px;
+            margin: 0 4px;
+            transition: all 0.3s;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+            background: rgba(109, 40, 217, 0.15);
+        }
+        
+        .nav-item:hover:not(.active) {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-icon {
+            font-size: 19px;
+            margin-bottom: 6px;
+        }
+        
+        .nav-label {
+            font-size: 8px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <!-- الهيدر -->
+    <header class="header">
+        <h1>
+            <i class="fas fa-play-circle"></i>
+            الفيديوهات التعليمية
+        </h1>
+        
+    </header>
+    
+    <!-- البحث -->
+    <div class="search-box">
+        <input type="text" class="search-input" placeholder="🔍 ابحث عن فيديو..." id="searchInput">
+    </div>
+    
+    <!-- تصفية الأساتذة -->
+    <div class="professor-filter">
+        <div class="filter-title">
+            <i class="fas fa-chalkboard-teacher"></i>
+            اختر أستاذاً لعرض فيديوهاته
+        </div>
+        <div class="chips" id="professorChips">
+            <!-- سيتم تعبئته بالكود -->
+        </div>
+    </div>
+    
+    <!-- قائمة الفيديوهات -->
+    <main class="video-list" id="videoList">
+        <!-- سيتم تعبئته بالكود -->
+    </main>
+    
+    <!-- حالة التحميل -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>جارٍ تحميل الفيديوهات...</p>
+    </div>
+    
+    <!-- نافذة الفيديو -->
+    <div class="video-modal" id="videoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">عنوان الفيديو</h3>
+                <button class="close-btn" onclick="closeVideo()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="player-container">
+                <iframe class="player" id="videoPlayer" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+    </div>
+    
+    <!-- شريط التنقل السفلي -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <div class="nav-icon">
+                <i class="fas fa-home"></i>
+            </div>
+            <div class="nav-label">الرئيسية</div>
+        </a>
+        
+        <a href="home.html" class="nav-item active">
+            <div class="nav-icon">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <div class="nav-label">الفيديوهات</div>
+        </a>
+        
+        <a href="quiz.html" class="nav-item">
+            <div class="nav-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="nav-label">الاختبارات</div>
+        </a>
+        
+        <a href="summaries.html" class="nav-item">
+            <div class="nav-icon">
+                <i class="fas fa-file-pdf"></i>
+            </div>
+            <div class="nav-label">الملخصات</div>
+        </a>
+        
+        <a href="profile.html" class="nav-item">
+            <div class="nav-icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="nav-label">البروفايل</div>
+        </a>
+    </nav>
+
+    <!-- الكود الرئيسي -->
+    <script>
+        console.log('🚀 بدء التطبيق...');
+        
+        // === إعدادات Supabase ===
+        const SUPABASE_URL = 'https://ikpijsdqmavklpgunumm.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlrcGlqc2RxbWF2a2xwZ3VudW1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzNzUzODgsImV4cCI6MjA3MDk1MTM4OH0.uC6t3PgZYOMQuWxFQrFy9aXIR4um0X1Lsf8SkplhZlc';
+        
+        let supabaseClient = null;
+        let videosData = [];
+        let professorsData = [];
+        let selectedProfessor = null;
+        let searchText = '';
+        let videoViews = JSON.parse(localStorage.getItem('videoViews')) || {};
+        
+        // === الدوال المساعدة ===
+        
+        // استخراج ID من رابط يوتيوب
+        function getYouTubeId(url) {
+            if (!url) return null;
+            const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^#&?]{11})/);
+            return match ? match[1] : null;
+        }
+        
+        // الحصول على صورة المصغرة
+        function getThumbnail(videoId) {
+            return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : '';
+        }
+        
+        // الحصول على الأحرف الأولى للاسم
+        function getInitials(name) {
+            if (!name) return '??';
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+        
+        // زيادة عدد المشاهدات
+        function addView(videoId) {
+            if (!videoViews[videoId]) videoViews[videoId] = 0;
+            videoViews[videoId]++;
+            localStorage.setItem('videoViews', JSON.stringify(videoViews));
+        }
+        
+        // === الدوال الرئيسية ===
+        
+        // تهيئة Supabase
+        async function initSupabase() {
+            try {
+                if (!window.supabase) {
+                    throw new Error('مكتبة Supabase غير محملة');
+                }
+                
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('✅ اتصال Supabase ناجح');
+                return true;
+            } catch (error) {
+                console.error('❌ خطأ في الاتصال:', error);
+                showError('خطأ في الاتصال بقاعدة البيانات');
+                return false;
+            }
+        }
+        
+        // تحميل البيانات
+        async function loadData() {
+            console.log('🔄 جلب البيانات...');
+            
+            try {
+                showLoading(true);
+                
+                // جلب الأساتذة
+                const { data: profs, error: profError } = await supabaseClient
+                    .from('professors')
+                    .select('*')
+                    .order('name');
+                
+                if (profError) throw profError;
+                
+                // جلب الفيديوهات
+                const { data: vids, error: vidError } = await supabaseClient
+                    .from('videos')
+                    .select(`
+                        *,
+                        professors (*)
+                    `)
+                    .order('created_at', { ascending: false });
+                
+                if (vidError) throw vidError;
+                
+                professorsData = profs || [];
+                videosData = vids || [];
+                
+                console.log(`✅ تم جلب ${professorsData.length} أستاذ و ${videosData.length} فيديو`);
+                
+                // عرض البيانات
+                showProfessors();
+                showVideos();
+                showLoading(false);
+                
+            } catch (error) {
+                console.error('❌ خطأ في جلب البيانات:', error);
+                showError('خطأ في جلب البيانات: ' + error.message);
+                showLoading(false);
+            }
+        }
+        
+        // عرض الأساتذة
+        function showProfessors() {
+            const container = document.getElementById('professorChips');
+            if (!container) return;
+            
+            // خيار "الكل"
+            const allVideosCount = videosData.length;
+            let html = `
+                <button class="chip ${selectedProfessor === null ? 'active' : ''}" onclick="selectProfessor(null)">
+                    الكل (${allVideosCount})
+                </button>
+            `;
+            
+            // إضافة الأساتذة
+            professorsData.forEach(prof => {
+                const profVideosCount = videosData.filter(v => v.professor_id === prof.id).length;
+                if (profVideosCount > 0) {
+                    html += `
+                        <button class="chip ${selectedProfessor === prof.id ? 'active' : ''}" 
+                                onclick="selectProfessor(${prof.id})">
+                            ${prof.name} (${profVideosCount})
+                        </button>
+                    `;
+                }
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // عرض الفيديوهات
+        function showVideos() {
+            const container = document.getElementById('videoList');
+            if (!container) return;
+            
+            let filteredVideos = [...videosData];
+            
+            // تصفية حسب الأستاذ
+            if (selectedProfessor !== null) {
+                filteredVideos = filteredVideos.filter(v => v.professor_id === selectedProfessor);
+            }
+            
+            // تصفية حسب البحث
+            if (searchText.trim()) {
+                const query = searchText.toLowerCase();
+                filteredVideos = filteredVideos.filter(v => {
+                    const title = v.title || '';
+                    const desc = v.description || '';
+                    const profName = v.professors?.name || '';
+                    
+                    return title.toLowerCase().includes(query) ||
+                           desc.toLowerCase().includes(query) ||
+                           profName.toLowerCase().includes(query);
+                });
+            }
+            
+            // حالة فارغة
+            if (filteredVideos.length === 0) {
+                let message = 'لا توجد فيديوهات';
+                let subMessage = 'ابدأ بإضافة أول فيديو';
+                
+                if (selectedProfessor !== null) {
+                    const prof = professorsData.find(p => p.id === selectedProfessor);
+                    message = `لا توجد فيديوهات لـ ${prof?.name || 'هذا الأستاذ'}`;
+                    subMessage = 'لم يتم إضافة فيديوهات بعد';
+                } else if (searchText.trim()) {
+                    message = 'لم يتم العثور على نتائج';
+                    subMessage = 'حاول البحث بكلمات أخرى';
+                }
+                
+                container.innerHTML = `
+                    <div class="empty" style="grid-column: 1/-1;">
+                        <i class="fas fa-film empty-icon"></i>
+                        <h3>${message}</h3>
+                        <p>${subMessage}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // عرض الفيديوهات
+            let html = '';
+            
+            filteredVideos.forEach(video => {
+                const videoId = getYouTubeId(video.youtube_url);
+                const thumbnail = getThumbnail(videoId);
+                const views = videoViews[video.id] || 0;
+                const profName = video.professors?.name || 'غير محدد';
+                const initials = getInitials(profName);
+                const title = video.title || 'بدون عنوان';
+                const desc = video.description || 'لا يوجد وصف';
+                
+                html += `
+                    <div class="video-card" onclick="playVideo(${video.id}, '${videoId}', '${title.replace(/'/g, "\\'")}')">
+                        <div class="video-thumb">
+                            ${thumbnail ? `<img src="${thumbnail}" alt="${title}">` : ''}
+                            <div class="play-btn">
+                                <i class="fas fa-play"></i>
+                            </div>
+                        </div>
+                        <div class="video-info">
+                            <h3 class="video-title">${title}</h3>
+                            <p class="video-desc">${desc}</p>
+                            <div class="video-footer">
+                                <div class="professor">
+                                    <div class="prof-avatar">${initials}</div>
+                                    <span class="prof-name">${profName}</span>
+                                </div>
+                                <div class="views">
+                                    <i class="fas fa-eye"></i>
+                                    ${views}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // === معالجات الأحداث ===
+        
+        // اختيار أستاذ
+        function selectProfessor(profId) {
+            selectedProfessor = profId;
+            showProfessors();
+            showVideos();
+        }
+        
+        // تشغيل الفيديو
+        function playVideo(videoDbId, youtubeId, title) {
+            if (!youtubeId) {
+                alert('رابط يوتيوب غير صالح');
+                return;
+            }
+            
+            // زيادة المشاهدات
+            addView(videoDbId);
+            
+            // تحديث الواجهة
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('videoPlayer').src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1`;
+            document.getElementById('videoModal').style.display = 'flex';
+            
+            // إعادة عرض الفيديوهات لتحديث العداد
+            showVideos();
+        }
+        
+        // إغلاق الفيديو
+        function closeVideo() {
+            document.getElementById('videoPlayer').src = '';
+            document.getElementById('videoModal').style.display = 'none';
+        }
+        
+        // إعداد البحث
+        function setupSearch() {
+            const input = document.getElementById('searchInput');
+            let timeout;
+            
+            input.addEventListener('input', (e) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    searchText = e.target.value;
+                    showVideos();
+                }, 400);
+            });
+        }
+        
+        // إظهار/إخفاء التحميل
+        function showLoading(show) {
+            const loadingEl = document.getElementById('loading');
+            const videoListEl = document.getElementById('videoList');
+            
+            if (show) {
+                loadingEl.style.display = 'block';
+                if (videoListEl) videoListEl.innerHTML = '';
+            } else {
+                loadingEl.style.display = 'none';
+            }
+        }
+        
+        // إظهار الخطأ
+        function showError(message) {
+            const container = document.getElementById('videoList');
+            if (!container) return;
+            
+            container.innerHTML = `
+                <div class="error-box" style="grid-column: 1/-1;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 50px; margin-bottom: 15px;"></i>
+                    <h3>حدث خطأ</h3>
+                    <p>${message}</p>
+                    <button class="retry-btn" onclick="loadData()">
+                        <i class="fas fa-redo"></i>
+                        إعادة المحاولة
+                    </button>
+                </div>
+            `;
+        }
+        
+        // === بدء التطبيق ===
+        async function startApp() {
+            console.log('🚀 بدء التطبيق...');
+            
+            try {
+                // 1. تهيئة Supabase
+                const connected = await initSupabase();
+                if (!connected) return;
+                
+                // 2. إعداد البحث
+                setupSearch();
+                
+                // 3. تحميل البيانات
+                await loadData();
+                
+                // 4. إغلاق المودال بالضغط على Esc
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        closeVideo();
+                    }
+                });
+                
+                // 5. إغلاق المودال بالضغط خارجها
+                document.getElementById('videoModal').addEventListener('click', (e) => {
+                    if (e.target === document.getElementById('videoModal')) {
+                        closeVideo();
+                    }
+                });
+                
+                console.log('✅ التطبيق جاهز للاستخدام');
+                
+            } catch (error) {
+                console.error('❌ خطأ فادح:', error);
+                document.body.innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: var(--error); background: var(--background); height: 100vh;">
+                        <h1>خطأ في التطبيق</h1>
+                        <p style="margin: 20px 0;">${error.message}</p>
+                        <button onclick="location.reload()" style="background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
+                            تحديث الصفحة
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        // تشغيل التطبيق عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', startApp);
+        
+        // جعل الدوال متاحة عالمياً
+        window.selectProfessor = selectProfessor;
+        window.playVideo = playVideo;
+        window.closeVideo = closeVideo;
+    </script>
+</body>
+</html>

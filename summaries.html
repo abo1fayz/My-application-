@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الملخصات التعليمية</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        /* متغيرات الألوان */
+        :root {
+            --primary: #6d28d9;
+            --primary-dark: #5b21b6;
+            --primary-light: #8b5cf6;
+            --secondary: #10b981;
+            --accent: #8b5cf6;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --surface-lighter: #475569;
+            --text: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #475569;
+            --border-light: #64748b;
+            --error: #ef4444;
+            --error-bg: #7f1d1d;
+            --success: #10b981;
+            --success-bg: #064e3b;
+            --warning: #f59e0b;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --shadow-light: rgba(0, 0, 0, 0.2);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --radius-full: 24px;
+        }
+
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--background); 
+            color: var(--text); 
+            direction: rtl;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        
+        /* الهيدر */
+        .header {
+            background: var(--surface);
+            color: var(--text);
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 3px 15px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .header button {
+            background: var(--surface-light);
+            color: var(--text);
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+        }
+        
+        .header button:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* شريط البحث */
+        .search-container {
+            padding: 18px 20px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 14px 20px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-full);
+            font-size: 16px;
+            transition: all 0.3s;
+            background: var(--surface-light);
+            color: var(--text);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.2);
+            background: var(--surface);
+        }
+        
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        .filter-select {
+            padding: 14px 20px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-full);
+            font-size: 16px;
+            background: var(--surface-light);
+            color: var(--text);
+            cursor: pointer;
+            min-width: 180px;
+        }
+        
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        /* تصنيفات الملخصات */
+        .categories {
+            padding: 15px 20px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .category-chip {
+            padding: 10px 20px;
+            background: var(--surface-light);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-full);
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .category-chip:hover {
+            background: var(--surface);
+            color: var(--text);
+            border-color: var(--primary);
+        }
+        
+        .category-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(109, 40, 217, 0.3);
+        }
+        
+        /* بطاقات الملخصات */
+        .summaries-grid {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        
+        @media (max-width: 680px) {
+            .summaries-grid { 
+                grid-template-columns: 1fr; 
+            }
+        }
+        
+        .summary-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 4px 12px var(--shadow);
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+        }
+        
+        .summary-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px var(--shadow);
+            border-color: var(--border-light);
+        }
+        
+        .summary-icon {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 50px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .summary-icon::before {
+            content: 'PDF';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .summary-info {
+            padding: 20px;
+        }
+        
+        .summary-category {
+            background: rgba(109, 40, 217, 0.15);
+            color: var(--primary);
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+        
+        .summary-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        
+        .summary-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            line-height: 1.5;
+            height: 60px;
+            overflow: hidden;
+        }
+        
+        .summary-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        
+        .summary-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .download-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: var(--radius-full);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            flex: 1;
+            justify-content: center;
+        }
+        
+        .download-btn:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(109, 40, 217, 0.3);
+        }
+        
+        .preview-btn {
+            background: var(--surface-light);
+            color: var(--text);
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--radius-full);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+        }
+        
+        .preview-btn:hover {
+            background: var(--surface);
+            border-color: var(--primary);
+        }
+        
+        /* فلتر السحب */
+        .filter-bar {
+            background: var(--surface);
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-tag {
+            background: rgba(109, 40, 217, 0.15);
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: var(--radius-full);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(109, 40, 217, 0.3);
+        }
+        
+        .clear-filters {
+            background: var(--surface-light);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: var(--radius-full);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s;
+        }
+        
+        .clear-filters:hover {
+            background: var(--surface);
+            border-color: var(--primary);
+        }
+        
+        /* نافذة المعاينة */
+        .preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .preview-modal-content {
+            background: var(--surface);
+            border-radius: var(--radius);
+            overflow: hidden;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px var(--shadow);
+        }
+        
+        .preview-header {
+            background: var(--surface-light);
+            color: var(--text);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .preview-title {
+            font-size: 20px;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+        
+        .preview-body {
+            padding: 30px;
+            overflow-y: auto;
+            flex: 1;
+            text-align: center;
+        }
+        
+        .pdf-viewer {
+            width: 100%;
+            height: 500px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            background: var(--surface-light);
+        }
+        
+        .preview-footer {
+            padding: 20px;
+            background: var(--surface-light);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        /* حالات التحميل والخطأ */
+        .loading {
+            padding: 60px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+            grid-column: 1/-1;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin { 
+            to { 
+                transform: rotate(360deg); 
+            } 
+        }
+        
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            color: var(--text-muted);
+            grid-column: 1/-1;
+        }
+        
+        .close-btn {
+            background: var(--surface-lighter);
+            color: var(--text);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+        
+        .close-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* الإشعارات */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 30px;
+            z-index: 1001;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { 
+                transform: translateX(100%); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateX(0); 
+                opacity: 1; 
+            }
+        }
+        
+        .notification-content {
+            background: var(--surface);
+            color: var(--text);
+            padding: 15px 20px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 5px 15px var(--shadow);
+            border: 1px solid var(--border);
+            min-width: 300px;
+        }
+        
+        .notification.success .notification-content {
+            background: var(--success-bg);
+            color: var(--success);
+            border-color: var(--success);
+        }
+        
+        .notification.error .notification-content {
+            background: var(--error-bg);
+            color: var(--error);
+            border-color: var(--error);
+        }
+        
+        .notification.warning .notification-content {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border-color: var(--warning);
+        }
+        
+        /* زر التحميل في المعاينة */
+        .modal-download-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: var(--radius-full);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        
+        .modal-download-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        /* التنقل السفلي */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            display: flex;
+            justify-content: space-around;
+            padding: 1px 0 16px;
+            box-shadow: 0 -4px 20px var(--shadow);
+            border-top: 1px solid var(--border);
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background-color: rgba(30, 41, 59, 0.95);
+        }
+        
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-muted);
+            padding: 1px 0;
+            border-radius: 10px;
+            margin: 0 1px;
+            transition: all 0.3s;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+            background: rgba(109, 40, 217, 0.15);
+        }
+        
+        .nav-item:hover:not(.active) {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-icon {
+            font-size: 17px;
+            margin-bottom: 6px;
+        }
+        
+        .nav-label {
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        /* تحسينات للهواتف */
+        @media (max-width: 600px) {
+            .search-container {
+                flex-direction: column;
+            }
+            
+            .search-input, .filter-select {
+                min-width: 100%;
+            }
+            
+            .filter-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .summary-actions {
+                flex-direction: column;
+            }
+            
+            .summary-desc {
+                height: auto;
+            }
+        }
+        
+        /* تحسينات للشاشات الكبيرة */
+        @media (min-width: 768px) {
+            .summaries-grid {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1><i class="fas fa-file-pdf"></i> الملخصات التعليمية</h1>
+        <div class="header-buttons">
+            <button onclick="window.location.href='home.html'" title="الفيديوهات التعليمية">
+                <i class="fas fa-play-circle"></i>
+            </button>
+            <button onclick="window.location.href='quiz.html'" title="الاختبارات">
+                <i class="fas fa-graduation-cap"></i>
+            </button>
+        </div>
+    </header>
+    
+    <div class="search-container">
+        <input type="text" class="search-input" placeholder="🔍 ابحث في الملخصات..." id="searchInput">
+        <select class="filter-select" id="categoryFilter">
+            <option value="">جميع التصنيفات</option>
+        </select>
+        <select class="filter-select" id="professorFilter">
+            <option value="">جميع الأساتذة</option>
+        </select>
+    </div>
+    
+    <div class="filter-bar" id="activeFiltersBar" style="display: none;">
+        <div style="color: var(--text-secondary);">التصفية:</div>
+        <div id="activeFilterTags"></div>
+        <button class="clear-filters" onclick="clearAllFilters()">
+            <i class="fas fa-times"></i> مسح الكل
+        </button>
+    </div>
+    
+    <div class="categories" id="categoriesContainer">
+        <!-- سيتم تعبئتها تلقائياً -->
+    </div>
+    
+    <main class="summaries-grid" id="summariesGrid">
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>جارٍ تحميل الملخصات...</p>
+        </div>
+    </main>
+    
+    <!-- نافذة المعاينة -->
+    <div class="preview-modal" id="previewModal">
+        <div class="preview-modal-content">
+            <div class="preview-header">
+                <h3 class="preview-title" id="previewTitle">عنوان الملخص</h3>
+                <button class="close-btn" onclick="closePreview()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="preview-body">
+                <div class="pdf-viewer" id="pdfViewer">
+                    <!-- سيتم عرض PDF هنا -->
+                </div>
+                <div style="margin-top: 20px; color: var(--text-secondary);">
+                    <p>يمكنك تحميل الملف مباشرة بالنقر على زر التحميل أدناه</p>
+                </div>
+            </div>
+            <div class="preview-footer">
+                <button class="modal-download-btn" id="modalDownloadBtn" onclick="downloadFromModal()">
+                    <i class="fas fa-download"></i> تحميل مباشر
+                </button>
+                <button class="preview-btn" onclick="closePreview()">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- شريط التنقل السفلي -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <div class="nav-icon">
+                <i class="fas fa-home"></i>
+            </div>
+            <div class="nav-label">الرئيسية</div>
+        </a>
+        
+        <a href="home.html" class="nav-item">
+            <div class="nav-icon">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <div class="nav-label">الفيديوهات</div>
+        </a>
+        
+        <a href="quiz.html" class="nav-item">
+            <div class="nav-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="nav-label">الاختبارات</div>
+        </a>
+        
+        <a href="summaries.html" class="nav-item active">
+            <div class="nav-icon">
+                <i class="fas fa-file-pdf"></i>
+            </div>
+            <div class="nav-label">الملخصات</div>
+        </a>
+        
+        <a href="profile.html" class="nav-item">
+            <div class="nav-icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="nav-label">البروفايل</div>
+        </a>
+    </nav>
+
+    <script>
+        // === إعدادات Supabase ===
+        const SUPABASE_URL = 'https://ikpijsdqmavklpgunumm.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlrcGlqc2RxbWF2a2xwZ3VudW1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzNzUzODgsImV4cCI6MjA3MDk5MTM4OH0.uC6t3PgZYOMQuWxFQrFy9aXIR4um0X1Lsf8SkplhZlc';
+        
+        let supabaseClient = null;
+        let summariesData = [];
+        let categoriesData = [];
+        let professorsData = [];
+        
+        // === المتغيرات الحالية ===
+        let currentPdfUrl = null;
+        let currentSummaryId = null;
+        let currentSummaryTitle = null;
+        
+        // === الدوال المساعدة ===
+        function formatFileSize(bytes) {
+            if (!bytes || bytes === 0) return '0 بايت';
+            const k = 1024;
+            const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return 'غير محدد';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('ar-SA', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            } catch {
+                return dateString;
+            }
+        }
+        
+        function convertToDirectDownloadLink(url) {
+            if (!url) return url;
+            
+            // إذا كان الرابط من Dropbox
+            if (url.includes('dropbox.com')) {
+                let directUrl = url;
+                directUrl = directUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+                directUrl = directUrl.split('?')[0];
+                
+                if (directUrl.includes('/s/')) {
+                    directUrl = directUrl.replace('/s/', '/s/raw/');
+                }
+                
+                return directUrl;
+            }
+            
+            // إذا كان الرابط من Google Drive
+            if (url.includes('drive.google.com')) {
+                if (url.includes('/file/d/')) {
+                    const match = url.match(/\/file\/d\/([^\/]+)/);
+                    if (match) {
+                        return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+                    }
+                }
+            }
+            
+            // إذا كان الرابط يحتوي على ?dl=0
+            if (url.includes('?dl=0')) {
+                return url.replace('?dl=0', '?dl=1');
+            }
+            
+            return url;
+        }
+        
+        // === إدارة التطبيق ===
+        async function initApp() {
+            try {
+                if (!window.supabase) throw new Error('مكتبة Supabase غير محملة');
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                
+                await loadData();
+                setupUI();
+                console.log('✅ تطبيق الملخصات جاهز');
+            } catch (error) {
+                console.error('❌ خطأ:', error);
+                showError('خطأ في تحميل التطبيق: ' + error.message);
+            }
+        }
+        
+        async function loadData() {
+            try {
+                showLoading(true);
+                
+                // جلب الملخصات المنشورة
+                const { data: summaries, error: summariesError } = await supabaseClient
+                    .from('summaries')
+                    .select(`
+                        *,
+                        professors (*)
+                    `)
+                    .eq('is_published', true)
+                    .order('created_at', { ascending: false });
+                
+                if (summariesError) throw summariesError;
+                summariesData = summaries || [];
+                
+                // جلب الأساتذة
+                const { data: profs, error: profsError } = await supabaseClient
+                    .from('professors')
+                    .select('*')
+                    .order('name');
+                
+                if (profsError) throw profsError;
+                professorsData = profs || [];
+                
+                // استخراج التصنيفات
+                extractCategories();
+                
+                console.log(`✅ تم جلب ${summariesData.length} ملخص، ${professorsData.length} أستاذ`);
+                
+                showLoading(false);
+                
+            } catch (error) {
+                console.error('❌ خطأ في جلب البيانات:', error);
+                showError('خطأ في جلب البيانات: ' + error.message);
+                showLoading(false);
+            }
+        }
+        
+        function extractCategories() {
+            const categorySet = new Set();
+            
+            summariesData.forEach(summary => {
+                if (summary.category && summary.category.trim() !== '') {
+                    categorySet.add(summary.category.trim());
+                }
+            });
+            
+            categoriesData = Array.from(categorySet).sort();
+        }
+        
+        function setupUI() {
+            populateCategories();
+            populateFilters();
+            setupEventListeners();
+            filterAndShowSummaries();
+        }
+        
+        function populateCategories() {
+            const container = document.getElementById('categoriesContainer');
+            if (!container) return;
+            
+            let html = `<button class="category-chip active" onclick="filterByCategory('all')">جميع الملخصات</button>`;
+            
+            categoriesData.forEach(category => {
+                const count = summariesData.filter(s => s.category === category).length;
+                html += `
+                    <button class="category-chip" onclick="filterByCategory('${category}')">
+                        ${category} (${count})
+                    </button>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function populateFilters() {
+            const categoryFilter = document.getElementById('categoryFilter');
+            let categoryHtml = '<option value="">جميع التصنيفات</option>';
+            categoriesData.forEach(category => {
+                categoryHtml += `<option value="${category}">${category}</option>`;
+            });
+            categoryFilter.innerHTML = categoryHtml;
+            
+            const professorFilter = document.getElementById('professorFilter');
+            let professorHtml = '<option value="">جميع الأساتذة</option>';
+            professorsData.forEach(prof => {
+                professorHtml += `<option value="${prof.id}">${prof.name}</option>`;
+            });
+            professorFilter.innerHTML = professorHtml;
+        }
+        
+        function setupEventListeners() {
+            const searchInput = document.getElementById('searchInput');
+            let searchTimeout;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    activeFilters.search = e.target.value.trim();
+                    filterAndShowSummaries();
+                }, 400);
+            });
+            
+            document.getElementById('categoryFilter').addEventListener('change', (e) => {
+                activeFilters.category = e.target.value || null;
+                filterAndShowSummaries();
+            });
+            
+            document.getElementById('professorFilter').addEventListener('change', (e) => {
+                activeFilters.professor = e.target.value ? parseInt(e.target.value) : null;
+                filterAndShowSummaries();
+            });
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closePreview();
+            });
+        }
+        
+        // === حالة الفلاتر ===
+        let activeFilters = {
+            search: '',
+            category: null,
+            professor: null
+        };
+        
+        let currentCategory = 'all';
+        
+        function filterByCategory(category) {
+            currentCategory = category;
+            activeFilters.category = category === 'all' ? null : category;
+            document.getElementById('categoryFilter').value = activeFilters.category || '';
+            filterAndShowSummaries();
+            
+            document.querySelectorAll('.category-chip').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+        
+        function filterAndShowSummaries() {
+            updateActiveFiltersBar();
+            
+            let filteredSummaries = [...summariesData];
+            
+            if (activeFilters.search) {
+                const query = activeFilters.search.toLowerCase();
+                filteredSummaries = filteredSummaries.filter(s => {
+                    const title = s.title || '';
+                    const desc = s.description || '';
+                    const cat = s.category || '';
+                    const profName = s.professors?.name || '';
+                    
+                    return title.toLowerCase().includes(query) ||
+                           desc.toLowerCase().includes(query) ||
+                           cat.toLowerCase().includes(query) ||
+                           profName.toLowerCase().includes(query);
+                });
+            }
+            
+            if (activeFilters.category !== null) {
+                filteredSummaries = filteredSummaries.filter(s => 
+                    s.category === activeFilters.category
+                );
+            }
+            
+            if (activeFilters.professor !== null) {
+                filteredSummaries = filteredSummaries.filter(s => 
+                    s.professor_id === activeFilters.professor
+                );
+            }
+            
+            showSummaries(filteredSummaries);
+        }
+        
+        function showSummaries(summariesToShow) {
+            const container = document.getElementById('summariesGrid');
+            if (!container) return;
+            
+            if (summariesToShow.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-file-pdf" style="font-size: 60px; color: var(--border);"></i>
+                        <h3 style="margin: 15px 0 10px;">لا توجد ملخصات</h3>
+                        <p style="color: var(--text-muted);">حاول البحث بكلمات أخرى أو اختر فئة مختلفة</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            summariesToShow.forEach(summary => {
+                const fileSize = formatFileSize(summary.file_size || 0);
+                const downloadCount = summary.download_count || 0;
+                const profName = summary.professors?.name || 'غير محدد';
+                const pdfUrl = summary.pdf_url || '';
+                
+                html += `
+                    <div class="summary-card">
+                        <div class="summary-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="summary-info">
+                            <span class="summary-category">${summary.category || 'عام'}</span>
+                            <h3 class="summary-title" title="${summary.title}">${summary.title || 'بدون عنوان'}</h3>
+                            <p class="summary-desc" title="${summary.description}">${summary.description || 'لا يوجد وصف'}</p>
+                            
+                            <div class="summary-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-user"></i>
+                                    <span>${profName}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-file"></i>
+                                    <span>${fileSize}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-download"></i>
+                                    <span>${downloadCount} تحميل</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="far fa-calendar"></i>
+                                    <span>${formatDate(summary.created_at)}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="summary-actions">
+                                <button class="download-btn" onclick="downloadSummary(${summary.id}, '${pdfUrl.replace(/'/g, "\\'")}', '${summary.title.replace(/'/g, "\\'")}')">
+                                    <i class="fas fa-download"></i> تحميل مباشر
+                                </button>
+                                <button class="preview-btn" onclick="previewSummary(${summary.id}, '${pdfUrl.replace(/'/g, "\\'")}', '${summary.title.replace(/'/g, "\\'")}')">
+                                    <i class="fas fa-eye"></i> معاينة
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function updateActiveFiltersBar() {
+            const bar = document.getElementById('activeFiltersBar');
+            const tagsContainer = document.getElementById('activeFilterTags');
+            
+            const activeTags = [];
+            
+            if (activeFilters.search) {
+                activeTags.push(`
+                    <div class="filter-tag">
+                        <i class="fas fa-search"></i>
+                        بحث: "${activeFilters.search}"
+                    </div>
+                `);
+            }
+            
+            if (activeFilters.category !== null) {
+                activeTags.push(`
+                    <div class="filter-tag">
+                        <i class="fas fa-tag"></i>
+                        ${activeFilters.category}
+                    </div>
+                `);
+            }
+            
+            if (activeFilters.professor !== null) {
+                const prof = professorsData.find(p => p.id === activeFilters.professor);
+                activeTags.push(`
+                    <div class="filter-tag">
+                        <i class="fas fa-user"></i>
+                        ${prof?.name || 'أستاذ'}
+                    </div>
+                `);
+            }
+            
+            if (activeTags.length > 0) {
+                tagsContainer.innerHTML = activeTags.join('');
+                bar.style.display = 'flex';
+            } else {
+                bar.style.display = 'none';
+            }
+        }
+        
+        function clearAllFilters() {
+            activeFilters.search = '';
+            activeFilters.category = null;
+            activeFilters.professor = null;
+            
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('professorFilter').value = '';
+            
+            document.querySelectorAll('.category-chip').forEach((btn, index) => {
+                btn.classList.remove('active');
+                if (index === 0) btn.classList.add('active');
+            });
+            
+            currentCategory = 'all';
+            filterAndShowSummaries();
+        }
+        
+        // === تحميل الملخص المباشر ===
+        async function downloadSummary(summaryId, pdfUrl, title) {
+            if (!pdfUrl) {
+                showNotification('❌ رابط التحميل غير متاح', 'error');
+                return;
+            }
+            
+            try {
+                await updateDownloadCount(summaryId);
+                
+                const summaryIndex = summariesData.findIndex(s => s.id === summaryId);
+                if (summaryIndex !== -1) {
+                    summariesData[summaryIndex].download_count = (summariesData[summaryIndex].download_count || 0) + 1;
+                    filterAndShowSummaries();
+                }
+                
+                const directDownloadUrl = convertToDirectDownloadLink(pdfUrl);
+                const filename = (title || 'ملخص').replace(/[^\w\u0600-\u06FF\s]/g, '') + '.pdf';
+                
+                showNotification('⏳ جاري بدء التحميل...', 'success');
+                
+                const link = document.createElement('a');
+                link.href = directDownloadUrl;
+                link.download = filename;
+                link.target = '_blank';
+                link.style.display = 'none';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                setTimeout(() => {
+                    window.open(directDownloadUrl, '_blank');
+                }, 500);
+                
+                showNotification('✅ بدأ تحميل الملف مباشرة...', 'success');
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحميل الملف:', error);
+                showNotification('⚠️ جارٍ فتح الملف في نافذة جديدة...', 'warning');
+                
+                setTimeout(() => {
+                    window.open(pdfUrl, '_blank');
+                }, 1000);
+            }
+        }
+        
+        // === دالة تحديث عدد التحميلات ===
+        async function updateDownloadCount(summaryId) {
+            try {
+                const summary = summariesData.find(s => s.id === summaryId);
+                if (!summary) {
+                    console.error('❌ الملخص غير موجود:', summaryId);
+                    return;
+                }
+                
+                const currentCount = summary.download_count || 0;
+                const newCount = currentCount + 1;
+                
+                const { data, error } = await supabaseClient
+                    .from('summaries')
+                    .update({ 
+                        download_count: newCount,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', summaryId)
+                    .select();
+                
+                if (error) {
+                    console.error('❌ خطأ في تحديث عدد التحميلات:', error);
+                    throw error;
+                }
+                
+                console.log('✅ تم تحديث عدد التحميلات:', data);
+                return data;
+                
+            } catch (error) {
+                console.error('❌ خطأ في updateDownloadCount:', error);
+                throw error;
+            }
+        }
+        
+        // === معاينة الملخص ===
+        function previewSummary(summaryId, pdfUrl, title) {
+            if (!pdfUrl) {
+                showNotification('❌ رابط المعاينة غير متاح', 'error');
+                return;
+            }
+            
+            currentPdfUrl = pdfUrl;
+            currentSummaryId = summaryId;
+            currentSummaryTitle = title;
+            
+            const modal = document.getElementById('previewModal');
+            const modalTitle = document.getElementById('previewTitle');
+            
+            modalTitle.textContent = title || 'معاينة الملخص';
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            
+            const pdfViewer = document.getElementById('pdfViewer');
+            pdfViewer.innerHTML = `
+                <iframe 
+                    src="https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true&hl=ar" 
+                    width="100%" 
+                    height="100%" 
+                    frameborder="0"
+                    allow="fullscreen"
+                    title="معاينة ${title || 'الملخص'}"
+                >
+                </iframe>
+            `;
+        }
+        
+        async function downloadFromModal() {
+            if (currentPdfUrl && currentSummaryId && currentSummaryTitle) {
+                await downloadSummary(currentSummaryId, currentPdfUrl, currentSummaryTitle);
+                closePreview();
+            }
+        }
+        
+        function closePreview() {
+            const modal = document.getElementById('previewModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            
+            const pdfViewer = document.getElementById('pdfViewer');
+            if (pdfViewer) {
+                pdfViewer.innerHTML = '';
+            }
+            
+            currentPdfUrl = null;
+            currentSummaryId = null;
+            currentSummaryTitle = null;
+        }
+        
+        // === إشعارات ===
+        function showNotification(message, type = 'success') {
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notification => {
+                notification.remove();
+            });
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            const icon = type === 'success' ? 'fa-check-circle' : 
+                        type === 'warning' ? 'fa-exclamation-triangle' : 
+                        'fa-exclamation-circle';
+            
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <i class="fas ${icon}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 3000);
+        }
+        
+        function showLoading(show) {
+            const container = document.getElementById('summariesGrid');
+            if (show) {
+                container.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>جارٍ تحميل الملخصات...</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function showError(message) {
+            const container = document.getElementById('summariesGrid');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 50px; margin-bottom: 20px; color: var(--error);"></i>
+                    <h3 style="margin: 15px 0 10px;">حدث خطأ</h3>
+                    <p style="color: var(--text-muted);">${message}</p>
+                    <button class="download-btn" onclick="location.reload()" style="margin-top: 20px;">
+                        <i class="fas fa-redo"></i> إعادة المحاولة
+                    </button>
+                </div>
+            `;
+        }
+        
+        // === التهيئة عند تحميل الصفحة ===
+        document.addEventListener('DOMContentLoaded', initApp);
+        
+        // تحديث تلقائي كل دقيقة
+        setInterval(() => {
+            console.log('🔄 تحديث البيانات...');
+            loadData();
+        }, 60000);
+    </script>
+</body>
+</html>
